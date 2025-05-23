@@ -24,7 +24,7 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'status', 'user_id', 'sort', 'direction', 'per_page']);
+        $filters = $request->only(['search', 'status', 'user_id', 'sort', 'direction', 'per_page', 'dateFrom', 'dateTo']);
         $posts = $this->postService->getAllPosts($filters);
 
         return Inertia::render('Posts/Index', [

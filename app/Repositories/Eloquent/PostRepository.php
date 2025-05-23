@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Post;
 use App\Repositories\Interfaces\PostRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostRepository implements PostRepositoryInterface
@@ -30,11 +31,10 @@ class PostRepository implements PostRepositoryInterface
 
         // Apply date range filters
         if (!empty($filters['dateFrom'])) {
-            $query->whereDate('created_at', '>=', $filters['dateFrom']);
+            $query->where('created_at', '>=', Carbon::parse($filters['dateFrom'])->startOfDay());
         }
-
         if (!empty($filters['dateTo'])) {
-            $query->whereDate('created_at', '<=', $filters['dateTo']);
+            $query->where('created_at', '<=', Carbon::parse($filters['dateTo'])->endOfDay());
         }
 
         // Apply sorting
