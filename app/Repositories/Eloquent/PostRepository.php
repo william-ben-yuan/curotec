@@ -9,6 +9,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class PostRepository implements PostRepositoryInterface
 {
+    /**
+     * Get all posts with optional filters.
+     *
+     * @param array $filters
+     * @return LengthAwarePaginator
+     */
     public function getAllWithFilters(array $filters): LengthAwarePaginator
     {
         $query = Post::query()
@@ -48,21 +54,46 @@ class PostRepository implements PostRepositoryInterface
         return $query->paginate($perPage);
     }
 
+    /**
+     * Get a post by its ID.
+     *
+     * @param int $id
+     * @return Post|null
+     */
     public function create(array $data): Post
     {
         return Post::create($data);
     }
 
+    /**
+     * Get a post by its ID.
+     *
+     * @param int $id
+     * @return Post|null
+     */
     public function findById(int $id): ?Post
     {
         return Post::with('user')->find($id);
     }
 
+    /**
+     * Update a post.
+     *
+     * @param Post $post
+     * @param array $data
+     * @return bool
+     */
     public function update(Post $post, array $data): bool
     {
         return $post->update($data);
     }
 
+    /**
+     * Delete a post.
+     *
+     * @param Post $post
+     * @return bool
+     */
     public function delete(Post $post): bool
     {
         return $post->delete();

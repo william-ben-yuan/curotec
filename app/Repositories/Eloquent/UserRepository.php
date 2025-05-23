@@ -8,6 +8,12 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class UserRepository implements UserRepositoryInterface
 {
+    /**
+     * Get all users with optional filters.
+     *
+     * @param array $filters
+     * @return LengthAwarePaginator
+     */
     public function getAllWithFilters(array $filters): LengthAwarePaginator
     {
         $query = User::query();
@@ -38,11 +44,23 @@ class UserRepository implements UserRepositoryInterface
         return $query->paginate($perPage);
     }
 
+    /**
+     * Get a user by its ID.
+     *
+     * @param int $id
+     * @return User|null
+     */
     public function findById(int $id): ?User
     {
         return User::find($id);
     }
 
+    /**
+     * Get a user by its ID with posts.
+     *
+     * @param int $id
+     * @return User|null
+     */
     public function findByIdWithPosts(int $id): ?User
     {
         return User::with('posts')->find($id);

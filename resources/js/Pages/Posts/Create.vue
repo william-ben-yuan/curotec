@@ -1,6 +1,7 @@
 <template>
   <div class="container py-4">
     <h1 class="fs-2 fw-bold mb-4">Create Post</h1>
+    <!-- Include the PostForm component without the post prop -->
     <PostForm :submitLabel="'Create Post'" :onSubmitForm="submit" />
   </div>
 </template>

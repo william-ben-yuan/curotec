@@ -1,6 +1,21 @@
-# Curotec 2 - Project Setup & Usage
+# Curotec - Project Setup & Usage
 
 This project is a Laravel + Vue.js (Inertia) application for managing posts.
+
+---
+
+## 🏗️ Architectural Decisions & Patterns
+
+-   **Backend:** Laravel (Repository & Service Pattern)
+    -   **Repository Pattern:** All database queries are abstracted in repositories (e.g., `PostRepository`), promoting separation of concerns and easier testing.
+    -   **Service Layer:** Business logic is handled in services (e.g., `PostService`), keeping controllers thin and focused on HTTP concerns.
+    -   **Request Validation:** Uses Laravel Form Requests for validation (`PostStoreRequest`, `PostUpdateRequest`).
+    -   **Inertia.js:** Bridges Laravel and Vue.js, enabling SPA-like navigation with server-side routing.
+-   **Frontend:** Vue 3 + Inertia.js
+    -   **Component-based:** UI is split into reusable Vue components.
+    -   **Pinia:** Used for state management where global state is needed.
+    -   **Bootstrap:** For UI styling.
+    -   **Vite:** For fast frontend builds and hot reload.
 
 ---
 
@@ -101,6 +116,36 @@ docker-compose exec app npm run build
 
 ---
 
+## 🧪 Testing Environment
+
+-   By default, tests use a separate database.
+-   You should create a `.env.testing` file in your project root with the following content (adjust as needed):
+
+    ```env
+    DB_CONNECTION=pgsql
+    DB_HOST=db
+    DB_PORT=5432
+    DB_DATABASE=laravel_test
+    DB_USERNAME=postgres
+    DB_PASSWORD=secret
+    ```
+
+-   Create the test database in your PostgreSQL container:
+
+    ```bash
+    docker-compose exec db psql -U postgres -c "CREATE DATABASE laravel_test;"
+    ```
+
+-   Before running tests for the first time, run migrations for the test database:
+
+    ```bash
+    docker-compose exec app php artisan migrate --env=testing
+    ```
+
+-   When you run tests with `php artisan test` or Pest, Laravel will use this test database and environment automatically.
+
+---
+
 ### 8. **Running Tests**
 
 **Feature & Unit Tests (using Pest):**
@@ -138,13 +183,12 @@ docker-compose exec app ./vendor/bin/pest
 
 ---
 
-## 📚 Additional Notes
+## 📝 Additional Notes
 
--   Default credentials for seeded users can be found in the database seeders/factories.
--   If you change dependencies, rebuild the container with:
-    ```bash
-    docker-compose build --no-cache
-    ```
+-   All business logic is in the Service layer, not controllers.
+-   All database access is via Repositories.
+-   For customizations, see the `/app/Services` and `/app/Repositories` folders.
+-   For tests, see `/tests/Feature/PostTest.php`.
 
 ---
 

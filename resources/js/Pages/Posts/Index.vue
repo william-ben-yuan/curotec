@@ -6,6 +6,7 @@
     </div>
     
     <div class="mb-4 d-flex flex-wrap gap-2">
+      <!-- Search input -->
       <input
         v-model="search"
         type="text"
@@ -15,6 +16,7 @@
         @input="handleSearch"
       />
 
+      <!-- Status filter -->
       <select v-model="status" class="form-select" style="max-width: 150px;" @change="handleSearch">
         <option value="">All Status</option>
         <option value="draft">Draft</option>
@@ -22,6 +24,7 @@
         <option value="archived">Archived</option>
       </select>
 
+      <!-- Author filter -->
       <select v-model="author" class="form-select" style="max-width: 200px;" @change="handleSearch">
         <option value="">All Authors</option>
         <option 
@@ -33,6 +36,7 @@
         </option>
       </select>
 
+      <!-- Date range filter -->
       <input
         v-model="dateFrom"
         type="date"
@@ -54,6 +58,7 @@
     <div class="card shadow">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
+          <!-- Table headers with sorting -->
           <thead>
             <tr>
               <th class="p-3" @click="setSort('title')" style="cursor:pointer">
@@ -110,6 +115,7 @@
       </div>
     </div>
     
+    <!-- Pagination -->
     <div class="mt-3 d-flex justify-content-between align-items-center">
       <div>
         Showing {{ posts.from }} to {{ posts.to }} 
@@ -147,18 +153,22 @@ import { getStatusBadgeClass } from '@/utils/constants';
 const page = usePage();
 const postStore = usePostStore();
 
+// Props
 const posts = computed(() => page.props.posts);
 const users = page.props.users || [];  
 
+// Filters
 const search = ref(page.props.filters?.search || '');
 const status = ref(page.props.filters?.status || '');
 const author = ref(page.props.filters?.author || '');
 const dateFrom = ref(page.props.filters?.dateFrom || '');
 const dateTo = ref(page.props.filters?.dateTo || '');
 
+// Sorting
 const sort = ref(page.props.filters?.sort || 'created_at');
 const direction = ref(page.props.filters?.direction || 'desc');
 
+// Computed properties for sorting
 function handleSearch() {
   router.get(route('posts.index'), {
     search: search.value,
@@ -169,8 +179,8 @@ function handleSearch() {
     sort: sort.value,
     direction: direction.value,
   }, {
-    preserveState: true,
-    replace: true,
+    preserveState: true, // Preserve the current state of the page
+    replace: true, // Replace the current URL without adding a new entry to the history stack
     only: ['posts', 'filters'],
   });
 }
@@ -191,6 +201,7 @@ function confirmDelete(id) {
   }
 }
 
+// It is important to handle the page change correctly
 function handlePageChange(url) {
   router.get(url, {
     search: search.value,
