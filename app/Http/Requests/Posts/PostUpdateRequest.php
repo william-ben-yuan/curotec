@@ -25,19 +25,6 @@ class PostUpdateRequest extends FormRequest
             'title' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|required|string',
             'status' => 'sometimes|required|in:draft,published,archived',
-            'published_at' => 'nullable|date|required_if:status,published',
-        ];
-    }
-
-    /**
-     * Get the error messages for the defined validation rules.
-     *
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return [
-            'published_at.required_if' => 'The publication date is required when the status is "published".',
         ];
     }
 }
