@@ -6,6 +6,8 @@ services:
             dockerfile: Dockerfile
         container_name: curotec_app
         restart: unless-stopped
+        ports:
+            - "5173:5173"
         volumes:
             - ./:/var/www/html
         depends_on:
