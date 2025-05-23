@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Posts\PostStoreRequest;
 use App\Http\Requests\Posts\PostUpdateRequest;
 use App\Models\Post;
+use App\Models\User;
 use App\Services\PostService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -23,12 +24,13 @@ class PostController extends Controller
      */
     public function index(Request $request)
     {
-        $filters = $request->only(['search', 'status', 'user_id', 'sort', 'per_page']);
+        $filters = $request->only(['search', 'status', 'user_id', 'sort', 'direction', 'per_page']);
         $posts = $this->postService->getAllPosts($filters);
 
         return Inertia::render('Posts/Index', [
             'posts' => $posts,
             'filters' => $filters,
+            'users' => User::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 

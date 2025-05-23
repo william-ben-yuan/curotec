@@ -2,16 +2,10 @@
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1 class="fs-2 fw-bold">Posts</h1>
-      <a 
-        :href="route('posts.create')" 
-        class="btn btn-primary"
-      >
-        New Post
-      </a>
+      <a :href="route('posts.create')" class="btn btn-primary">New Post</a>
     </div>
     
-    <!-- Simple Search -->
-    <div class="mb-4 d-flex">
+    <div class="mb-4 d-flex flex-wrap gap-2">
       <input
         v-model="search"
         type="text"
@@ -20,33 +14,80 @@
         style="max-width: 250px;"
         @input="handleSearch"
       />
-      
+
       <select v-model="status" class="form-select" style="max-width: 150px;" @change="handleSearch">
         <option value="">All Status</option>
         <option value="draft">Draft</option>
         <option value="published">Published</option>
         <option value="archived">Archived</option>
       </select>
+
+      <select v-model="author" class="form-select" style="max-width: 200px;" @change="handleSearch">
+        <option value="">All Authors</option>
+        <option 
+          v-for="user in users" 
+          :key="user.id" 
+          :value="user.id"
+        >
+          {{ user.name }}
+        </option>
+      </select>
+
+      <input
+        v-model="dateFrom"
+        type="date"
+        class="form-control"
+        style="max-width: 150px;"
+        @change="handleSearch"
+        placeholder="From"
+      />
+      <input
+        v-model="dateTo"
+        type="date"
+        class="form-control"
+        style="max-width: 150px;"
+        @change="handleSearch"
+        placeholder="To"
+      />
     </div>
     
-    <!-- Posts Table -->
     <div class="card shadow">
       <div class="table-responsive">
         <table class="table table-hover mb-0">
-          <!-- ... table headers ... -->
-          <tbody>
+          <thead>
             <tr>
-              <th class="p-3">Title</th>
-              <th class="p-3">Author</th>
-              <th class="p-3">Status</th>
-              <th class="p-3">Date</th>
+              <th class="p-3" @click="setSort('title')" style="cursor:pointer">
+                Title
+                <span v-if="sort === 'title'">
+                  <i :class="direction === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                </span>
+              </th>
+              <th class="p-3" @click="setSort('user_id')" style="cursor:pointer">
+                Author
+                <span v-if="sort === 'user_id'">
+                  <i :class="direction === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                </span>
+              </th>
+              <th class="p-3" @click="setSort('status')" style="cursor:pointer">
+                Status
+                <span v-if="sort === 'status'">
+                  <i :class="direction === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                </span>
+              </th>
+              <th class="p-3" @click="setSort('created_at')" style="cursor:pointer">
+                Date
+                <span v-if="sort === 'created_at'">
+                  <i :class="direction === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                </span>
+              </th>
               <th class="p-3 text-end">Actions</th>
             </tr>
-            <tr v-if="$page.props.posts.data.length === 0">
+          </thead>
+          <tbody>
+            <tr v-if="posts.data.length === 0">
               <td colspan="5" class="p-3 text-center text-muted">No posts found</td>
             </tr>
-            
-            <tr v-for="post in $page.props.posts.data" :key="post.id">
+            <tr v-for="post in posts.data" :key="post.id">
               <td class="p-3">{{ post.title }}</td>
               <td class="p-3">{{ post.user?.name }}</td>
               <td class="p-3">
@@ -69,23 +110,24 @@
       </div>
     </div>
     
-    <!-- Simple Pagination -->
     <div class="mt-3 d-flex justify-content-between align-items-center">
       <div>
-        Showing {{ $page.props.posts.from }} to {{ $page.props.posts.to }} 
-        of {{ $page.props.posts.total }} results
+        Showing {{ posts.from }} to {{ posts.to }} 
+        of {{ posts.total }} results
       </div>
       <div>
         <a 
-          v-if="$page.props.posts.prev_page_url" 
-          :href="$page.props.posts.prev_page_url"
+          v-if="posts.prev_page_url" 
+          href="#"
+          @click.prevent="handlePageChange(posts.prev_page_url)"
           class="btn btn-outline-secondary btn-sm me-2"
         >
           Previous
         </a>
         <a 
-          v-if="$page.props.posts.next_page_url" 
-          :href="$page.props.posts.next_page_url"
+          v-if="posts.next_page_url" 
+          href="#"
+          @click.prevent="handlePageChange(posts.next_page_url)"
           class="btn btn-outline-secondary btn-sm"
         >
           Next
@@ -96,31 +138,72 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 import { usePostStore } from '@/stores/postStore';
 import { formatDate } from '@/utils/formatters';
 import { getStatusBadgeClass } from '@/utils/constants';
 
+const page = usePage();
 const postStore = usePostStore();
-const search = ref('');
-const status = ref('');
 
-// Simple search function
+const posts = computed(() => page.props.posts);
+const users = page.props.users || [];  
+
+const search = ref(page.props.filters?.search || '');
+const status = ref(page.props.filters?.status || '');
+const author = ref(page.props.filters?.author || '');
+const dateFrom = ref(page.props.filters?.dateFrom || '');
+const dateTo = ref(page.props.filters?.dateTo || '');
+
+const sort = ref(page.props.filters?.sort || 'created_at');
+const direction = ref(page.props.filters?.direction || 'desc');
+
 function handleSearch() {
   router.get(route('posts.index'), {
     search: search.value,
-    status: status.value
+    status: status.value,
+    user_id: author.value,
+    dateFrom: dateFrom.value,
+    dateTo: dateTo.value,
+    sort: sort.value,
+    direction: direction.value,
   }, {
     preserveState: true,
-    replace: true
+    replace: true,
+    only: ['posts', 'filters'],
   });
 }
 
-// Delete confirmation
+function setSort(column) {
+  if (sort.value === column) {
+    direction.value = direction.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sort.value = column;
+    direction.value = 'asc';
+  }
+  handleSearch();
+}
+
 function confirmDelete(id) {
   if (confirm('Are you sure you want to delete this post?')) {
-    router.delete(route('posts.destroy', id));
+    postStore.deletePost(id);
   }
+}
+
+function handlePageChange(url) {
+  router.get(url, {
+    search: search.value,
+    status: status.value,
+    author: author.value,
+    dateFrom: dateFrom.value,
+    dateTo: dateTo.value,
+    sort: sort.value,
+    direction: direction.value,
+  }, {
+    preserveState: true,
+    replace: true,
+    only: ['posts', 'filters'],
+  });
 }
 </script>

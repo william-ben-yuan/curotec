@@ -28,15 +28,19 @@ class PostRepository implements PostRepositoryInterface
             $query->where('user_id', $filters['user_id']);
         }
 
-        // Apply sorting
-        if (isset($filters['sort'])) {
-            $sort = $filters['sort'];
-            $direction = $sort[0] === '-' ? 'desc' : 'asc';
-            $field = $sort[0] === '-' ? substr($sort, 1) : $sort;
-            $query->orderBy($field, $direction);
-        } else {
-            $query->latest();
+        // Apply date range filters
+        if (!empty($filters['dateFrom'])) {
+            $query->whereDate('created_at', '>=', $filters['dateFrom']);
         }
+
+        if (!empty($filters['dateTo'])) {
+            $query->whereDate('created_at', '<=', $filters['dateTo']);
+        }
+
+        // Apply sorting
+        $sort = $filters['sort'] ?? 'created_at';
+        $direction = $filters['direction'] ?? 'desc';
+        $query->orderBy($sort, $direction);
 
         // Apply pagination
         $perPage = $filters['per_page'] ?? 10;
