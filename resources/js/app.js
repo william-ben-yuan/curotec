@@ -6,11 +6,14 @@ import { createInertiaApp } from '@inertiajs/vue3'
 import { createPinia } from 'pinia';
 import { InertiaProgress } from '@inertiajs/progress';
 import { ZiggyVue } from 'ziggy-js';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
 createInertiaApp({
     resolve: name => {
         const pages = import.meta.glob('./Pages/**/*.vue', { eager: true })
-        return pages[`./Pages/${name}.vue`]
+        let page = pages[`./Pages/${name}.vue`];
+        page.default.layout = page.default.layout || AppLayout;
+        return page;
     },
     setup({ el, App, props, plugin }) {
         const pinia = createPinia();
