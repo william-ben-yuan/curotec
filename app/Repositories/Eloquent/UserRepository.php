@@ -35,7 +35,7 @@ class UserRepository implements UserRepositoryInterface
         // Apply pagination
         $perPage = $filters['per_page'] ?? 10;
 
-        return $query->withQueryString()->paginate($perPage);
+        return $query->paginate($perPage);
     }
 
     public function findById(int $id): ?User

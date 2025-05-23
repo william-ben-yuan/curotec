@@ -11,7 +11,7 @@ class PostRepository implements PostRepositoryInterface
     public function getAllWithFilters(array $filters): LengthAwarePaginator
     {
         $query = Post::query()
-            ->with('user:id,name,email,avatar');
+            ->with('user:id,name,email');
 
         // Apply search filter
         if (isset($filters['search'])) {
@@ -41,7 +41,7 @@ class PostRepository implements PostRepositoryInterface
         // Apply pagination
         $perPage = $filters['per_page'] ?? 10;
 
-        return $query->withQueryString()->paginate($perPage);
+        return $query->paginate($perPage);
     }
 
     public function create(array $data): Post
