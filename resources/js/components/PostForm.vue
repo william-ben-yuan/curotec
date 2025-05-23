@@ -91,14 +91,16 @@ const form = useForm({
 function onSubmit() {
   form.clearErrors();
 
-  // Basic front-end validation (optional)
+  // Fields validation
   if (!form.title) {
     form.setError('title', 'The title field is required.');
-    return;
   }
 
   if (!form.content) {
     form.setError('content', 'The content field is required.');
+  }
+
+  if (Object.keys(form.errors).length > 0) {
     return;
   }
 

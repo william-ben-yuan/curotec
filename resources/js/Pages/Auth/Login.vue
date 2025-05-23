@@ -92,6 +92,21 @@ const form = useForm({
 });
 
 function submit() {
+  form.clearErrors();
+
+  // Fields validation
+  if (form.email === '') {
+    form.setError('email', 'Email is required');
+  }
+
+  if (form.password === '') {
+    form.setError('password', 'Password is required');
+  }
+
+  if (Object.keys(form.errors).length > 0) {
+    return;
+  }
+
   form.post(route('login'), {
     onFinish: () => {
       form.reset('password');

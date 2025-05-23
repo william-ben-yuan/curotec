@@ -110,6 +110,29 @@ const form = useForm({
 });
 
 function submit() {
+  form.clearErrors();
+
+  // Fields validation
+  if(!form.name) {
+    form.setError('name', 'Name is required');
+  }
+
+  if(!form.email) {
+    form.setError('email', 'Email is required');
+  }
+
+  if(!form.password) {
+    form.setError('password', 'Password is required');
+  }
+
+  if(!form.password_confirmation) {
+    form.setError('password_confirmation', 'Password confirmation is required');
+  }
+
+  if (Object.keys(form.errors).length > 0) {
+    return;
+  }
+
   form.post(route('register'));
 }
 </script>
