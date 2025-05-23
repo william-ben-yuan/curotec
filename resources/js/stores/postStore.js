@@ -1,7 +1,14 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
+import PostService from '@/services/PostService';
 
+/**
+ * Store for managing posts state
+ * Implements the separation of concerns pattern:
+ * - Store: manages state and coordinates actions
+ * - Service: encapsulates API communication
+ */
 export const usePostStore = defineStore('posts', () => {
   // ------ STATE ------
   const posts = ref([]);
@@ -12,14 +19,31 @@ export const usePostStore = defineStore('posts', () => {
     search: '',
     status: '',
     per_page: 10,
+    page: 1
   });
   
-  // ------ GETTERS ------
-  const getPostById = (id) => {
-    return posts.value.find(post => post.id === id);
-  };
+  // ------ GETTERS (COMPUTED) ------
+  const getPostById = computed(() => {
+    return (id) => posts.value.find(post => post.id === id);
+  });
 
-  const hasErrors = () => Object.keys(errors).length > 0;
+  const hasErrors = computed(() => Object.keys(errors.value).length > 0);
+  
+  const postsByStatus = computed(() => {
+    const grouped = {
+      published: [],
+      draft: [],
+      archived: []
+    };
+    
+    posts.value.forEach(post => {
+      if (grouped[post.status]) {
+        grouped[post.status].push(post);
+      }
+    });
+    
+    return grouped;
+  });
 
   // ------ ACTIONS ------
 
@@ -27,7 +51,7 @@ export const usePostStore = defineStore('posts', () => {
    * Reset errors object
    */
   const resetErrors = () => {
-    Object.keys(errors).forEach(key => delete errors[key]);
+    errors.value = {};
   };
 
   /**
@@ -35,7 +59,7 @@ export const usePostStore = defineStore('posts', () => {
    */
   const handleErrors = (validationErrors) => {
     resetErrors();
-    Object.assign(errors, validationErrors);
+    errors.value = validationErrors;
   };
 
   /**
@@ -48,86 +72,123 @@ export const usePostStore = defineStore('posts', () => {
   /**
    * Fetch all posts with filters
    */
-  const fetchPosts = () => {
-    setLoading(true);
-    
-    router.get(route('posts.index'), filters.value, {
-      preserveState: true,
-      preserveScroll: true,
-      onFinish: () => setLoading(false)
-    });
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      await PostService.getPosts(filters.value);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
    * Fetch a single post by ID
    */
-  const fetchPost = (id) => {
-    setLoading(true);
-    
-    router.get(route('posts.show', id), {}, {
-      preserveState: true,
-      onSuccess: (page) => {
-        currentPost.value = page.props.post;
-      },
-      onFinish: () => setLoading(false)
-    });
+  const fetchPost = async (id) => {
+    try {
+      setLoading(true);
+      await PostService.getPost(id)
+        .then(page => {
+          if (page && page.props && page.props.post) {
+            currentPost.value = page.props.post;
+          }
+        });
+    } catch (error) {
+      console.error(`Error fetching post ${id}:`, error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
-   * Create a new post
+   * Create a new post with optimistic update
    */
-  const createPost = (postData) => {
-    setLoading(true);
-    resetErrors();
-    
-    router.post(route('posts.store'), postData, {
-      onSuccess: () => {
-        setLoading(false);
-        router.visit(route('posts.index'), {
-          preserveScroll: true
+  const createPost = async (postData) => {
+    try {
+      setLoading(true);
+      resetErrors();
+      
+      await PostService.createPost(postData)
+        .then(() => {
+          router.visit(route('posts.index'), { 
+            preserveScroll: true 
+          });
+        })
+        .catch(error => {
+          if (error.response && error.response.data && error.response.data.errors) {
+            handleErrors(error.response.data.errors);
+          } else {
+            console.error('Error creating post:', error);
+          }
         });
-      },
-      onError: handleErrors,
-      onFinish: () => setLoading(false)
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
    * Update an existing post
    */
-  const updatePost = (id, data) => {
-    setLoading(true);
-    resetErrors();
-    
-    router.put(route('posts.update', id), data, {
-      onSuccess: () => {
-        router.visit(route('posts.show', id), {
-          preserveScroll: true
+  const updatePost = async (id, data) => {
+    try {
+      setLoading(true);
+      resetErrors();
+      
+      await PostService.updatePost(id, data)
+        .then(() => {
+          router.visit(route('posts.show', id), { 
+            preserveScroll: true 
+          });
+        })
+        .catch(error => {
+          if (error.response && error.response.data && error.response.data.errors) {
+            handleErrors(error.response.data.errors);
+          } else {
+            console.error(`Error updating post ${id}:`, error);
+          }
         });
-      },
-      onError: handleErrors,
-      onFinish: () => setLoading(false)
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
-   * Delete a post
+   * Delete a post with optimistic update
    */
-  const deletePost = (id) => {
-    setLoading(true);
-    
-    router.delete(route('posts.destroy', id), {
-      onSuccess: () => {
-        // Se estamos na página de detalhes do post, redirecione para o índice
-        if (window.location.pathname.includes(`/posts/${id}`)) {
-          router.visit(route('posts.index'));
-        }
-      },
-      onError: (e) => {
-        alert('Error deleting post: ' + e.message);
-      },
-      onFinish: () => setLoading(false)
-    });
+  const deletePost = async (id) => {
+    try {
+      setLoading(true);
+      
+      // Backup for rollback if needed
+      const postIndex = posts.value.findIndex(post => post.id === id);
+      const postBackup = postIndex !== -1 ? {...posts.value[postIndex]} : null;
+      
+      // Optimistic update: remove from local array immediately
+      if (postIndex !== -1) {
+        posts.value.splice(postIndex, 1);
+      }
+      
+      await PostService.deletePost(id)
+        .then(() => {
+          // If we're on the post detail page, redirect to index
+          if (window.location.pathname.includes(`/posts/${id}`)) {
+            router.visit(route('posts.index'));
+          }
+        })
+        .catch(error => {
+          // Rollback in case of error
+          if (postBackup && postIndex !== -1) {
+            posts.value.splice(postIndex, 0, postBackup);
+          }
+          
+          console.error(`Error deleting post ${id}:`, error);
+          alert('Error deleting post: ' + (error.message || 'Unknown error'));
+        });
+    } finally {
+      setLoading(false);
+    }
   };
 
   /**
@@ -159,9 +220,10 @@ export const usePostStore = defineStore('posts', () => {
     errors,
     filters,
     
-    // Getter functions
+    // Getters
     getPostById,
     hasErrors,
+    postsByStatus,
     
     // Actions
     fetchPosts,
